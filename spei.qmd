@@ -9,119 +9,182 @@ format:
 ## Cargar paquetes y datos
 
 ```{r}
-# Ejecutar esta línea solo la primera vez si no tienes SPEI instalado:
-# install.packages("SPEI")
 
-library(SPEI)
+rm(list = ls())  # Limpia el entorno (opcional, para partir de cero)
 
-# Leer los CSV
-datos_cogoti <- read.csv("data/cogoti_spei.csv", header = TRUE)
+###########################################################
+# 1. Cargar paquetes necesarios
+###########################################################
+pkgs <- c("dplyr", "ggplot2", "SPEI", "lubridate", "purrr", "tibble")
 
-datos_ramadas <- read.csv(
+inst <- pkgs[!pkgs %in% installed.packages()[, "Package"]]
+if (length(inst) > 0) install.packages(inst)
+
+lapply(pkgs, library, character.only = TRUE)
+
+###########################################################
+# 2. Leer las bases de cada estación
+###########################################################
+
+cogoti_raw <- read.csv(
+  "data/cogoti_spei.csv",
+  header = TRUE,
+  stringsAsFactors = FALSE
+)
+
+ramadas_raw <- read.csv(
   "data/ramadas_spei.csv",
   header = TRUE,
+  stringsAsFactors = FALSE,
   sep = ";"
 )
 
-# Mostrar primeras filas para comprobar que se cargaron bien
-head(datos_cogoti)
-head(datos_ramadas)
-```
+# Revisa cómo se llaman las columnas
+names(cogoti_raw)
+names(ramadas_raw)
 
-## Calcular ETP y balance hídrico – Estación Cogotí
+###########################################################
+# 3. Dejar los mismos nombres de columnas en ambas bases
+#    (agno, mes, dia, pmen, tmax, tmin)
+###########################################################
+names(cogoti_raw)  <- c("agno", "mes", "dia", "pmen", "tmax", "tmin")
+names(ramadas_raw) <- c("agno", "mes", "dia", "pmen", "tmax", "tmin")
 
-```{r, include=FALSE}
-# Capturamos todo lo que imprime hargreaves para que NO aparezca en el HTML
-dummy_out_cogoti <- capture.output({
-  datos_cogoti$ETP_har <- hargreaves(
-    datos_cogoti$tmin,
-    datos_cogoti$tmax,
-    lat = -31.035833
+###########################################################
+# 4. Crear columna de fecha y marcar estación meteorológica
+###########################################################
+cogoti <- cogoti_raw |>
+  mutate(
+    estacion = "Cogotí",
+    fecha    = make_date(year = agno, month = mes, day = dia)
   )
-})
 
-# Balance Pp - ETP
-datos_cogoti$BAL <- datos_cogoti$pmen - datos_cogoti$ETP_har
-```
-
-## Calcular SPEI a 3 y 12 meses – Estación Cogotí
-
-```{r, include=FALSE}
-dummy_spei_cogoti <- capture.output({
-  spei3_cogoti  <- spei(datos_cogoti$BAL, 3)
-  spei12_cogoti <- spei(datos_cogoti$BAL, 12)
-})
-```
-
-## Gráficos SPEI – Estación Cogotí
-
-```{r}
-# SPEI 12 meses – Cogotí
-plot(
-  spei12_cogoti$fitted,
-  type = "l",
-  main = "SPEI (12 meses) – Estación Cogotí",
-  xlab = "Tiempo",
-  ylab = "SPEI"
-)
-abline(h = c(-2, -1, 0, 1, 2), lty = c(2, 3, 1, 3, 2))
-
-# SPEI 3 meses – Cogotí
-plot(
-  spei3_cogoti$fitted,
-  type = "l",
-  main = "SPEI (3 meses) – Estación Cogotí",
-  xlab = "Tiempo",
-  ylab = "SPEI"
-)
-abline(h = c(-2, -1, 0, 1, 2), lty = c(2, 3, 1, 3, 2))
-```
-
-## Calcular ETP y balance hídrico – Estación Ramadas
-
-```{r, include=FALSE}
-# Capturamos lo que imprime hargreaves para Ramadas
-dummy_out_ramadas <- capture.output({
-  datos_ramadas$ETP_har <- hargreaves(
-    datos_ramadas$tmin,
-    datos_ramadas$tmax,
-    lat = -31.035833
+ramadas <- ramadas_raw |>
+  mutate(
+    estacion = "Las Ramadas",
+    fecha    = make_date(year = agno, month = mes, day = dia)
   )
-})
 
-# Balance Pp - ETP
-datos_ramadas$BAL <- datos_ramadas$pmen - datos_ramadas$ETP_har
-```
+###########################################################
+# 5. Unir ambas estaciones en un solo data frame
+###########################################################
+datos <- bind_rows(cogoti, ramadas) |>
+  arrange(estacion, fecha)
 
-## Calcular SPEI a 3 y 12 meses – Estación Ramadas
+###########################################################
+# 6. Calcular ETP (Hargreaves) y balance hídrico
+###########################################################
+# IMPORTANTE:
+# - Aquí puedes filtrar NAs si tu base tiene días/meses sin datos (acá hubieron como 4 datos perdidos OJITO).
+#   Ejemplo: filter(!is.na(tmax), !is.na(tmin), !is.na(pmen))
+###########################################################
+datos <- datos |>
+  mutate(
+    etp  = hargreaves(tmin, tmax, lat = -31.035833),  # Cambia lat si quieres otra
+    bal  = pmen - etp
+  )
 
-```{r, include=FALSE}
-dummy_spei_ramadas <- capture.output({
-  spei3_ramadas  <- spei(datos_ramadas$BAL, 3)
-  spei12_ramadas <- spei(datos_ramadas$BAL, 12)
-})
-```
+###########################################################
+# 7. Usar purrr para calcular SPEI por estación meteo
+###########################################################
+# Separa la base en una lista: una tabla por estación ("Cogotí", "Ramadas")
+lista_est <- split(datos, datos$estacion)
 
-## Gráficos SPEI – Estación Ramadas
+# Función que calcula SPEI k-mensual para una estación
+calc_spei_estacion <- function(df, escala = 12) {
+  df <- df[order(df$fecha), ]      # Ordenar por fecha por si acaso
+  spei_obj <- spei(df$bal, escala) # Cálculo de SPEI
+  
+  tibble(
+    fecha    = df$fecha,
+    estacion = unique(df$estacion),
+    spei     = as.numeric(spei_obj$fitted),
+    escala   = escala
+  )
+}
 
-```{r}
-# SPEI 12 meses – Ramadas
-plot(
-  spei12_ramadas$fitted,
-  type = "l",
-  main = "SPEI (12 meses) – Estación Ramadas",
-  xlab = "Tiempo",
-  ylab = "SPEI"
-)
-abline(h = c(-2, -1, 0, 1, 2), lty = c(2, 3, 1, 3, 2))
+# SPEI-12 meses 
+spei12_est <- map_dfr(lista_est, calc_spei_estacion, escala = 12)
 
-# SPEI 3 meses – Ramadas
-plot(
-  spei3_ramadas$fitted,
-  type = "l",
-  main = "SPEI (3 meses) – Estación Ramadas",
-  xlab = "Tiempo",
-  ylab = "SPEI"
-)
-abline(h = c(-2, -1, 0, 1, 2), lty = c(2, 3, 1, 3, 2))
+# (Opcional) SPEI-3 meses:
+spei3_est  <- map_dfr(lista_est, calc_spei_estacion, escala = 3)
+
+###########################################################
+# 8. Gráfico tipo “pluma” SPEI-12 (barras azules/rojas)
+###########################################################
+# AQUÍ ES DONDE PUEDES CAMBIAR:
+# - Colores de seco/húmedo (scale_fill_manual)
+# - Título, ejes, tamaño de letra (labs + theme)
+# - N° de columnas de los facets (facet_wrap)
+###########################################################
+
+ggplot(spei12_est, aes(x = fecha, y = spei)) +
+  # Línea horizontal en 0 (umbral neutral)
+  geom_hline(yintercept = 0, color = "grey40", linewidth = 0.4) +
+  
+  # Barras: las positivas van hacia arriba, las negativas hacia abajo
+  # Usamos ifelse dentro de aes(y = ...) para que siempre partan desde 0
+  geom_col(
+    data = ~ subset(.x, spei >= 0),
+    aes(y = spei),
+    fill = "#6a994e",        # ← COLOR DE LAS BARRAS HÚMEDAS (cámbialo aquí)
+    width = 30                  # ancho aproximado de la barra (días)
+  ) +
+  geom_col(
+    data = ~ subset(.x, spei < 0),
+    aes(y = spei),
+    fill = "darkred",        # ← COLOR DE LAS BARRAS SECAS (cámbialo aquí)
+    width = 30
+  ) +
+  
+  # Un panel por estación meteorológica
+  facet_wrap(~ estacion, ncol = 1, scales = "free_x") +
+  
+  # Títulos de los ejes y del gráfico
+  labs(
+    title = "Índice Estandarizado de Evotranspiración (SPEI) de 12 meses",
+    x     = "Años",
+    y     = "Valor del balance hídrico"
+  ) +
+  
+  # Tema visual general
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title   = element_text(face = "bold", hjust = 0.5),  # centrado
+    strip.text   = element_text(face = "bold", size = 14),    # títulos de los panels
+    axis.text.x  = element_text(angle = 45, hjust = 1),       # etiquetas de años inclinadas
+    panel.grid.minor = element_blank()
+  )
+
+###########################################################
+# 9. (Opcional) Mismo tipo de gráfico, pero para SPEI-3
+###########################################################
+ggplot(spei3_est, aes(x = fecha, y = spei)) +
+  geom_hline(yintercept = 0, color = "grey40", linewidth = 0.4) +
+  geom_col(
+    data = ~ subset(.x, spei >= 0),
+    aes(y = spei),
+    fill = "#6a994e",        
+    width = 30
+  ) +
+  geom_col(
+    data = ~ subset(.x, spei < 0),
+    aes(y = spei),
+    fill = "darkred",
+    width = 30
+  ) +
+  facet_wrap(~ estacion, ncol = 1, scales = "free_x") +
+  labs(
+    title = "Índice Estandarizado de Evotranspiración (SPEI) de 3 meses",
+    x     = "Años",
+    y     = "Valor del balance hídrico"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title   = element_text(face = "bold", hjust = 0.5),
+    strip.text   = element_text(face = "bold", size = 14),
+    axis.text.x  = element_text(angle = 45, hjust = 1),
+    panel.grid.minor = element_blank()
+  )
+
 ```

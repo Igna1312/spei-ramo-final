@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Ignacio Pizarro">
 
-<title>Inicio – SPEI – Cogotí y Ramadas</title>
+<title>Análisis exploratorio de la sequía en Cogotí y Las Ramadas (Región de Coquimbo, Chile) – SPEI – Cogotí y Ramadas</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -113,13 +114,19 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Inicio</h1>
+<h1 class="title">Análisis exploratorio de la sequía en Cogotí y Las Ramadas (Región de Coquimbo, Chile)</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Ignacio Pizarro </p>
+          </div>
+  </div>
     
   
     
@@ -130,12 +137,18 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="data/IMG.jpg" class="img-fluid figure-img" style="width:100.0%" alt="Mapa de la zona de estudio (Cogotí y Las Ramadas, Región de Coquimbo)."></p>
+<figcaption>Viejo mirando a los caballos oh el weon amanerao</figcaption>
+</figure>
+</div>
 <section id="análisis-del-índice-spei-en-cogotí-y-ramadas" class="level1">
 <h1>Análisis del índice SPEI en Cogotí y Ramadas</h1>
-<p>Este sitio reúne un análisis exploratorio del índice de Precipitación-Evapotranspiración Estandarizado (SPEI) para dos estaciones:</p>
+<p>Este sitio reúne un análisis exploratorio del índice de Precipitación-Evapotranspiración Estandarizado (SPEI), este permite medir la sequía en un sector a partir de la comparación temporal de datos de precipitación mensual, temperatura máxima y minima (Hargreaves, 1994). Para este estudio, se utilizó SPEI 12 (el cual mide sequia en un periodo de 12 meses consecutivos) y SPEI 3 (mide sequia en un periodo de 3 meses consecutivos) en dos estaciones meteorológicas de dos localidades:</p>
 <ul>
 <li><strong>Cogotí</strong></li>
-<li><strong>Ramadas</strong></li>
+<li><strong>Las Ramadas</strong></li>
 </ul>
 <p>A partir de series históricas de precipitación y temperatura máxima/mínima, se calcula:</p>
 <ol type="1">
@@ -146,24 +159,37 @@ ul.task-list li input[type="checkbox"] {
 <li>El <strong>SPEI</strong> a distintas escalas temporales (3 y 12 meses), para identificar periodos de sequía y humedad.</li>
 </ol>
 <hr>
-<section id="qué-puedes-ver-en-este-sitio" class="level2">
-<h2 class="anchored" data-anchor-id="qué-puedes-ver-en-este-sitio">Qué puedes ver en este sitio</h2>
+<section id="exploración-de-datos" class="level2">
+<h2 class="anchored" data-anchor-id="exploración-de-datos">Exploración de datos</h2>
 <ul>
-<li>Una breve tabla con los primeros registros de cada estación.</li>
-<li>Gráficos del <strong>SPEI a 12 meses</strong>, que permiten ver tendencias de sequía prolongada.</li>
-<li>Gráficos del <strong>SPEI a 3 meses</strong>, útiles para variaciones más rápidas en la disponibilidad hídrica.</li>
+<li>Una serie con los registros de cada estación.</li>
+<li>Gráficos del <strong>SPEI a 12 meses</strong>, que permiten ver tendencias de sequía prolongada en el tiempo.</li>
+<li>Gráficos del <strong>SPEI a 3 meses</strong>, útiles para variaciones más rápidas en la disponibilidad hídrica, siendo útil para evaluar los efectos en actividades de agricultura y ganadería.</li>
 </ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="data/images-2.jpeg" class="img-fluid figure-img" style="width:100.0%" alt="Mapa de la zona de estudio (Cogotí y Las Ramadas, Región de Coquimbo)."></p>
+<figcaption>La foto mas HD que pude encontrar</figcaption>
+</figure>
+</div>
 <p>Puedes ir directamente al análisis detallado acá:</p>
 <ul>
 <li>👉 <a href="./spei.html">Ver análisis SPEI</a></li>
 </ul>
-<hr>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">## Conclusiones</td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="notas-técnicas" class="level2">
 <h2 class="anchored" data-anchor-id="notas-técnicas">Notas técnicas</h2>
 <ul>
-<li>Datos originales: series mensuales de precipitación (mm), temperatura máxima (°C) y mínima (°C).</li>
-<li>Cálculo de ETP: función <code>hargreaves()</code> del paquete <strong>SPEI</strong> en R.</li>
+<li>Datos provenientes de la plataforma https://explorador.cr2.cl del Centro de Ciencia del Clima y Resiliencia (CR2)</li>
+<li>Datos utilizados: series mensuales de precipitación (mm), temperatura máxima (°C) y mínima (°C).</li>
+<li>Uso del paquete <strong><em>SPEI</em></strong> en RStudio con el cálculo de Evotranspiración: función <code>hargreaves()</code></li>
 <li>Cálculo de SPEI: función <code>spei()</code> del mismo paquete, para escalas de 3 y 12 meses.</li>
 <li>Sitio generado con <strong>Quarto</strong> y publicado como website estático.</li>
 </ul>
