@@ -1,0 +1,40 @@
+---
+title: "Inicio"
+format:
+  html:
+    toc: false
+---
+
+# Análisis del índice SPEI en Cogotí y Ramadas
+
+Este sitio reúne un análisis exploratorio del índice de Precipitación-Evapotranspiración Estandarizado (SPEI) para dos estaciones:
+
+-   **Cogotí**
+-   **Ramadas**
+
+A partir de series históricas de precipitación y temperatura máxima/mínima, se calcula:
+
+1.  La **evapotranspiración potencial (ETP)** mediante el método de Hargreaves.\
+2.  El **balance hídrico mensual** (precipitación menos ETP).\
+3.  El **SPEI** a distintas escalas temporales (3 y 12 meses), para identificar periodos de sequía y humedad.
+
+------------------------------------------------------------------------
+
+## Qué puedes ver en este sitio
+
+-   Una breve tabla con los primeros registros de cada estación.
+-   Gráficos del **SPEI a 12 meses**, que permiten ver tendencias de sequía prolongada.
+-   Gráficos del **SPEI a 3 meses**, útiles para variaciones más rápidas en la disponibilidad hídrica.
+
+Puedes ir directamente al análisis detallado acá:
+
+-   👉 [Ver análisis SPEI](spei.qmd)
+
+------------------------------------------------------------------------
+
+## Notas técnicas
+
+-   Datos originales: series mensuales de precipitación (mm), temperatura máxima (°C) y mínima (°C).
+-   Cálculo de ETP: función `hargreaves()` del paquete **SPEI** en R.
+-   Cálculo de SPEI: función `spei()` del mismo paquete, para escalas de 3 y 12 meses.
+-   Sitio generado con **Quarto** y publicado como website estático.
